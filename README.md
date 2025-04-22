@@ -86,5 +86,5 @@ Each sample includes customer queries, intents, and slot information.
 ## 📎 Authors
 
 - [Inbal Bolshinsky](https://github.com/InbalBolshinsky), [Shani Kupiec](https://github.com/shaniKupiec), [Almog Sasson](https://github.com/Almog-Sasson) and [Nadav Margaliot](https://github.com/NadavMargaliot)
-- HIT: NLP course
+- NLP Course, Holon Institute of Technology (HIT)
 
