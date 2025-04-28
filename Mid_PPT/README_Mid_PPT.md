@@ -83,7 +83,27 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 
 ---
 
-## 🔑 5. Set Up Your GROQ API Key
+## 5. Upgrade pip (Optional but Recommended)
+
+
+```bash
+python -m pip install --upgrade pip
+```
+
+---
+
+## 6. Move to the project path
+
+```bash
+cd ./your_path_to_to_the_project/Mid_PPT
+```
+
+✅ **Important:**
+- Replace `your_path_to_to_the_project` with your real path.
+
+---
+
+## 🔑 7. Set Up Your GROQ API Key
 
 This project **requires** a GROQ API key for access to the models.
 
@@ -103,7 +123,7 @@ GROQ_API_KEY=your_actual_api_key_here
 
 ---
 
-## 6. Install Project Dependencies
+## 8. Install Project Dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -111,7 +131,8 @@ pip install -r requirements.txt
 
 ---
 
-## 7. Verify GPU from Python
+
+## 9. Verify GPU from Python
 
 Before running the main scripts, it’s recommended to **run the GPU check** script:
 
@@ -123,7 +144,7 @@ python checkgpu.py
 
 ---
 
-## 8. Running the Scripts
+## 10. Running the Scripts
 
 ### To run `baseline.py`:
 
