@@ -1,0 +1,10 @@
+transformers
+datasets
+bert-score
+pydantic
+pydantic-ai-slim[groq]
+nest_asyncio
+httpx
+scikit-learn
+accelerate>=0.26.0
+python-dotenv
