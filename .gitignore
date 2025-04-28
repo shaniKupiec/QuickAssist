@@ -27,3 +27,5 @@ build/
 
 # Local environment configuration
 .env
+
+results/
