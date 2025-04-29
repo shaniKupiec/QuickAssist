@@ -22,13 +22,15 @@ from pydantic_ai.models.groq import GroqModel
 from pydantic_ai.providers.groq import GroqProvider
 from dotenv import load_dotenv
 
-"""# 🔑 API Key (can be set via environment variables)"""
+nest_asyncio.apply()
+
+# 🔑 API Key (can be set via environment variables)
 
 # Load environment variables from the .env file
 load_dotenv()
 
 # Access environment variables using os.getenv() or os.environ
-groq_api_key = os.getenv("GROQ_API_KEY", "")
+groq_api_keys = os.getenv("GROQ_API_KEYS", "").split(",")
 
 """# ✅ Load & preprocess dataset
 
@@ -101,18 +103,27 @@ trainer.train()
 """# 🧪 Response Generation"""
 
 MAX_NEW_TOKENS = 128
-MAX_EVAL_SAMPLES = 50
+MAX_EVAL_SAMPLES = 500
 
-def generate_responses(df, tokenizer, model):
+def generate_responses(df, tokenizer, model, batch_size=8):
     sample = df.iloc[:MAX_EVAL_SAMPLES].copy()
     dataset = Dataset.from_pandas(sample)
-    inputs = tokenizer(dataset["instruction"], return_tensors="pt", padding=True, truncation=True).to(model.device)
+    generated_responses = []
 
-    with torch.no_grad():
-        outputs = model.generate(**inputs, max_new_tokens=MAX_NEW_TOKENS)
+    for i in range(0, len(dataset), batch_size):
+        batch = dataset[i:i+batch_size]
+        inputs = tokenizer(batch["instruction"], return_tensors="pt", padding=True, truncation=True, max_length=128)
+        inputs = {k: v.to(model.device) for k, v in inputs.items()}
 
-    sample["generated_response"] = tokenizer.batch_decode(outputs, skip_special_tokens=True)
+        with torch.no_grad():
+            outputs = model.generate(**inputs, max_new_tokens=MAX_NEW_TOKENS)
+
+        decoded = tokenizer.batch_decode(outputs, skip_special_tokens=True)
+        generated_responses.extend(decoded)
+
+    sample["generated_response"] = generated_responses
     return sample
+
 
 sample_with_predictions = generate_responses(test_df, tokenizer, model)
 references = sample_with_predictions["response"].tolist()
@@ -127,7 +138,6 @@ print(f"\n📈 BERTScore (F1): {F1.mean().item():.4f}")
 
 """# 🧠 Human-like Eval (Groq)"""
 
-nest_asyncio.apply()
 
 """Evaluation schema"""
 
@@ -150,25 +160,45 @@ Return only a JSON object with the fields:
 
 """Setup Groq agent"""
 
-groq_model = GroqModel(
-    "llama-3.3-70b-versatile",
-    provider=GroqProvider(api_key=groq_api_key),
-)
+# Define your models here
 
-agent = Agent[None, ChatEvaluation](
-    model=groq_model,
-    system_prompt=system_instruction,
-    result_type=ChatEvaluation,
-)
+groq_models = [
+    "llama-3.3-70b-versatile",
+    "llama-3.1-8b-instant",
+    "deepseek-r1-distill-llama-70b",
+    "meta-llama/llama-4-maverick-17b-128e-instruct",
+    "meta-llama/llama-4-scout-17b-16e-instruct",
+]
+
+# Make sure the lengths of groq_api_keys and groq_models match
+if len(groq_api_keys) != len(groq_models):
+    raise ValueError("Number of API keys and models must match.")
+
+groq_credentials = list(zip(groq_api_keys, groq_models))
+current_credential_index = 0
+
+def create_agent(api_key, model_name):
+    return Agent[None, ChatEvaluation](
+        model=GroqModel(model_name, provider=GroqProvider(api_key=api_key)),
+        system_prompt=system_instruction,
+        result_type=ChatEvaluation,
+    )
+
+# Initialize agent with the first set of credentials
+agent = create_agent(*groq_credentials[current_credential_index])
 
 """Helper functions"""
+
+evaluation_stopped = False  # Global flag to stop evaluations
 
 # Prompt for each row
 def create_user_prompt(query, response):
     return f"""Customer Query:\n{query}\n\nChatbot Response:\n{response}"""
 
+
 # Retry logic
-async def evaluate_single(index, instruction, response, max_retries=5, base_delay=2):
+async def evaluate_single(index, instruction, response, max_retries=6, base_delay=2):
+    global agent, current_credential_index, evaluation_stopped
     prompt = create_user_prompt(instruction, response)
 
     for attempt in range(max_retries):
@@ -179,23 +209,39 @@ async def evaluate_single(index, instruction, response, max_retries=5, base_dela
 
         except Exception as e:
             delay = base_delay * (2 ** attempt)
-            print(f"⚠️ Rate limit hit at {index + 1}, retrying in {delay} seconds...")
+            print(f"⚠️ Error: {str(e)} — retrying in {delay} seconds...")
+
+            if attempt == max_retries - 1:
+                current_credential_index += 1
+
+                if current_credential_index >= len(groq_credentials):
+                    print("❌ All API keys and models have been exhausted. Halting evaluation.")
+                    evaluation_stopped = True
+                    return None
+
+                next_key, next_model = groq_credentials[current_credential_index]
+                print(f"🔁 Switching to next API key and model: {next_model} (index {current_credential_index})")
+                agent = create_agent(next_key, next_model)
+
             await asyncio.sleep(delay)
 
     print(f"🚫 Skipping {index + 1} after {max_retries} failed attempts.")
+    return None
 
-# Main loop for evaluation
+
+
 async def evaluate_all(df):
-    tasks = [
-        evaluate_single(i, row["instruction"], row["generated_response"])
-        for i, row in df.iloc[:MAX_EVAL_SAMPLES].iterrows()
-    ]
     results = []
-    for task in tasks:
-        result = await task
+    for i, row in df.iloc[:MAX_EVAL_SAMPLES].iterrows():
+        if evaluation_stopped:
+            print("🛑 Stopping evaluation early due to exhausted credentials.")
+            break
+        result = await evaluate_single(i, row["instruction"], row["generated_response"])
         results.append(result)
-        await asyncio.sleep(1.5)  # Small delay to ease pressure on API
+        await asyncio.sleep(1.5)
     return results
+
+
 
 """Run Human Evaluation & Add Results to DataFrame"""
 
@@ -203,30 +249,30 @@ async def evaluate_all(df):
 
 structured_scores = asyncio.run(evaluate_all(sample_with_predictions))
 
+# Drop remaining unevaluated rows
+valid_scores = [res for res in structured_scores if res is not None]
+valid_rows = sample_with_predictions.iloc[:len(valid_scores)].copy()
+
 for metric in ["Helpfulness", "Fluency", "Appropriateness"]:
-    sample_with_predictions.loc[:MAX_EVAL_SAMPLES - 1, metric] = [
+    valid_rows[metric] = [
         res[metric] if isinstance(res, dict) else getattr(res, metric)
-        for res in structured_scores
+        for res in valid_scores
     ]
 
-sample_with_predictions["average_score"] = sample_with_predictions[["Helpfulness", "Fluency", "Appropriateness"]].mean(axis=1)
+valid_rows["average_score"] = valid_rows[["Helpfulness", "Fluency", "Appropriateness"]].mean(axis=1)
 
-# Example of saving the whole DataFrame to a CSV file in the new directory
+# Save outputs
 print("\n📊 Metric Averages:")
-print(sample_with_predictions[["Helpfulness", "Fluency", "Appropriateness"]].mean())
+print(valid_rows[["Helpfulness", "Fluency", "Appropriateness"]].mean())
 
-# Save the metric averages to the new directory
 metric_file_path = os.path.join(output_dir, "metric_averages.csv")
-sample_with_predictions[["Helpfulness", "Fluency", "Appropriateness"]].mean().to_csv(metric_file_path, index=True)
+valid_rows[["Helpfulness", "Fluency", "Appropriateness"]].mean().to_csv(metric_file_path, index=True)
 print(f"✅ Metric averages saved to '{metric_file_path}'")
 
-print("\n🧮 Example of Row-wise Averages:")
-# Save row-wise averages to the new directory
 row_wise_file_path = os.path.join(output_dir, "row_wise_averages.csv")
-sample_with_predictions["average_score"].head().to_csv(row_wise_file_path, index=False)
+valid_rows["average_score"].to_csv(row_wise_file_path, index=False)
 print(f"✅ Row-wise averages saved to '{row_wise_file_path}'")
 
-# Full results
 full_results_file_path = os.path.join(output_dir, "full_results.csv")
-sample_with_predictions.to_csv(full_results_file_path, index=False)
+valid_rows.to_csv(full_results_file_path, index=False)
 print(f"✅ Full results saved to '{full_results_file_path}'")

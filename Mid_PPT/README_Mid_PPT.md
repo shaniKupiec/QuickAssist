@@ -103,23 +103,24 @@ cd ./your_path_to_to_the_project/Mid_PPT
 
 ---
 
-## 🔑 7. Set Up Your GROQ API Key
+## 🔑 7. Set Up Your GROQ API Keys
 
-This project **requires** a GROQ API key for access to the models.
+This project **requires** one or more GROQ API keys to access the models.
 
-You must manually create a `.env` file in the project folder and add your API key:
+You must manually create a `.env` file in the project folder and add your API keys:
 
 1. Create a file named `.env` in the root of your project (same level as your Python files).
 2. Open the `.env` file and add:
 
 ```bash
-GROQ_API_KEY=your_actual_api_key_here
+# Comma-separated list of your Groq API keys
+GROQ_API_KEYS=key1,key2,key3
 ```
 
 ✅ **Important:**
-- Replace `your_actual_api_key_here` with your real API key.
-- Make sure there are **no spaces** around the `=`.
+- Replace `key1,key2,key3` with your actual API keys (no spaces between them).
 - Keep the `.env` file private — **never upload it to GitHub** or share it publicly!
+- The system will automatically rotate between keys when rate limits are hit.
 
 ---
 
