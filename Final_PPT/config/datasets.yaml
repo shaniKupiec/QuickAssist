@@ -1,0 +1,19 @@
+datasets:
+  bitext:
+    name: "bitext/Bitext-customer-support-llm-chatbot-training-dataset"
+    split: "train"
+    fields:
+      input: "instruction"
+      output: "response"
+    sample_frac: 0.2  # Use 20% of data for faster experimentation
+    test_size: 0.2    # 20% for testing
+
+  bitod:
+    name: "bitod/customer_service"  # Replace with actual dataset name
+    split: "train"
+    fields:
+      input: "query"
+      output: "response"
+      intent: "intent"  # For two-step approach
+    sample_frac: 0.2
+    test_size: 0.2 

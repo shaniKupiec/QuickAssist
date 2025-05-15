@@ -1,10 +1,22 @@
-transformers
-datasets
-bert-score
-pydantic
-pydantic-ai-slim[groq]
-nest_asyncio
-httpx
-scikit-learn
-accelerate>=0.26.0
-python-dotenv
+# Core dependencies
+torch>=2.0.0
+transformers>=4.30.0
+datasets>=2.12.0
+pandas>=1.5.3
+scikit-learn>=1.2.2
+pydantic>=2.0.0
+python-dotenv>=1.0.0
+pyyaml>=6.0.0
+
+# Evaluation dependencies
+bert-score>=0.3.13
+rouge-score>=0.1.2
+nltk>=3.8.1
+numpy>=1.24.0
+
+# API dependencies
+pydantic-ai>=0.1.0
+httpx>=0.24.1
+
+# Async support
+nest-asyncio>=1.5.6
