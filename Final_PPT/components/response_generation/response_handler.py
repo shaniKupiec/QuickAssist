@@ -9,6 +9,7 @@ from transformers import (
 from pydantic_ai import Agent
 from pydantic_ai.models.groq import GroqModel
 from pydantic_ai.providers.groq import GroqProvider
+from datasets import Dataset
 import os
 
 class ResponseHandler:
@@ -23,9 +24,10 @@ class ResponseHandler:
         """Setup the appropriate model based on configuration."""
         if self.model_type == "t5":
             self.tokenizer = AutoTokenizer.from_pretrained(self.model_config['name'])
-            self.model = AutoModelForSeq2SeqLM.from_pretrained(
-                self.model_config['output_dir'] if self.model_config['fine_tuned'] else self.model_config['name']
-            ).to(self.device)
+            # Always start with the base model
+            self.model = AutoModelForSeq2SeqLM.from_pretrained(self.model_config['name']).to(self.device)
+        
+        # TODO: finish flow for gpt-4
         elif self.model_type == "gpt-4":
             # Setup Groq model for response generation
             self.model = Agent[None, str](
@@ -36,6 +38,25 @@ class ResponseHandler:
                 system_prompt="""You are a helpful customer service assistant.
                 Provide clear, concise, and helpful responses to customer queries."""
             )
+
+    def preprocess(self, examples):
+        """Preprocess the data for training.
+        
+        Args:
+            examples: Dictionary containing 'input' and 'output' fields, and optionally 'intent'
+        Returns:
+            Tokenized inputs with labels
+        """
+        # Format input based on whether intent is available
+        if "intent" in examples:
+            formatted_input = [f"[Intent: {i}] User Query: {q}" for i, q in zip(examples["intent"], examples["input"])]
+        else:
+            formatted_input = [f"User Query: {q}" for q in examples["input"]]
+            
+        inputs = self.tokenizer(formatted_input, padding="max_length", truncation=True, max_length=128)
+        labels = self.tokenizer(examples["output"], padding="max_length", truncation=True, max_length=128)
+        inputs["labels"] = labels["input_ids"]
+        return inputs
 
     def format_input(self, query, intent=None):
         """Format input based on whether intent is provided."""
@@ -55,6 +76,7 @@ class ResponseHandler:
             response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
             return response
         
+        # TODO: finish flow for gpt-4
         elif self.model_type == "gpt-4":
             # Use GPT-4 for response generation
             result = await self.model.run(formatted_input)
@@ -69,16 +91,22 @@ class ResponseHandler:
             raise ValueError(f"Model type {self.model_type} is not trainable")
         
         if self.model_type == "t5":
+            print("Starting model training...")
+            # Convert DataFrame to Dataset and preprocess
+            train_dataset = Dataset.from_pandas(train_data).map(self.preprocess, batched=True)
+            eval_dataset = None
+            if eval_data is not None:
+                eval_dataset = Dataset.from_pandas(eval_data).map(self.preprocess, batched=True)
+
             # Training configuration
             training_args = Seq2SeqTrainingArguments(
-                output_dir=self.model_config['output_dir'],
+                output_dir="./results",  # Simple output directory like in baseline.py
                 per_device_train_batch_size=16,
                 num_train_epochs=5,
                 learning_rate=5e-5,
                 weight_decay=0.01,
                 logging_steps=50,
                 save_strategy="epoch",
-                evaluation_strategy="epoch" if eval_data is not None else "no",
                 report_to="none"
             )
 
@@ -92,10 +120,11 @@ class ResponseHandler:
             trainer = Seq2SeqTrainer(
                 model=self.model,
                 args=training_args,
-                train_dataset=train_data,
-                eval_dataset=eval_data,
+                train_dataset=train_dataset,
+                eval_dataset=eval_dataset,
                 data_collator=data_collator,
             )
 
             # Start training
-            trainer.train() 
+            trainer.train()
+            print("Training completed successfully!") 

@@ -5,15 +5,16 @@ datasets:
     fields:
       input: "instruction"
       output: "response"
-    sample_frac: 0.2  # Use 20% of data for faster experimentation
-    test_size: 0.2    # 20% for testing
+      intent: "intent"
+    sample_frac: 0.2 # Use 20% of data for faster experimentation
+    test_size: 0.2 # 20% for testing
 
   bitod:
-    name: "pranav301102/customer-service-for-llm"
+    name: "bitod/customer_service" # Replace with actual dataset name
     split: "train"
     fields:
-      input: "instruction"
+      input: "query"
       output: "response"
-      intent: "intent"
+      intent: "intent" # For two-step approach
     sample_frac: 0.2
-    test_size: 0.2 
+    test_size: 0.2

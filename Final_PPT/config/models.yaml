@@ -12,17 +12,18 @@ intent_models:
   #   output_dir: "models/intent/bert-finetuned"
 
 response_models:
-  t5-base:
+  # no one used this model
+  t5-base: 
     type: "t5"
     name: "google/flan-t5-small"
     fine_tuned: false
     output_dir: "models/response/t5-base"
 
-  # t5-finetuned:
-  #   type: "t5"
-  #   name: "google/flan-t5-small"
-  #   fine_tuned: true
-  #   output_dir: "models/response/t5-finetuned"
+  t5-finetuned:
+    type: "t5"
+    name: "google/flan-t5-small"
+    fine_tuned: true
+    output_dir: "models/response/t5-finetuned"
 
   #gpt-4:
   #  type: "gpt-4"
