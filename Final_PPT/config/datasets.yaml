@@ -9,11 +9,11 @@ datasets:
     test_size: 0.2    # 20% for testing
 
   bitod:
-    name: "bitod/customer_service"  # Replace with actual dataset name
+    name: "pranav301102/customer-service-for-llm"
     split: "train"
     fields:
-      input: "query"
+      input: "instruction"
       output: "response"
-      intent: "intent"  # For two-step approach
+      intent: "intent"
     sample_frac: 0.2
     test_size: 0.2 

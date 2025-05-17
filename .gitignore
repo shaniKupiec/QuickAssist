@@ -6,6 +6,7 @@ __pycache__/
 # Virtual environment directories
 venv/
 env/
+.venv/
 .env/
 
 # IDE configurations (optional)
@@ -28,4 +29,12 @@ build/
 # Local environment configuration
 .env
 
+# Results and outputs
 results/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# HuggingFace cache
+.cache/

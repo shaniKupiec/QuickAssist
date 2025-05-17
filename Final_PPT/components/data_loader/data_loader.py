@@ -5,11 +5,38 @@ import yaml
 import pandas as pd
 from datasets import load_dataset
 from sklearn.model_selection import train_test_split
+import re
 
 def load_config(config_path):
     """Load configuration from YAML file."""
     with open(config_path, 'r') as f:
         return yaml.safe_load(f)
+
+def preprocess_bitod(df: pd.DataFrame) -> pd.DataFrame:
+    """Specific preprocessing for BiToD dataset.
+    
+    Args:
+        df: DataFrame containing BiToD data
+    Returns:
+        Preprocessed DataFrame
+    """
+    # Convert to lowercase
+    df['input'] = df['input'].str.lower()
+    df['output'] = df['output'].str.lower()
+    
+    # Remove extra whitespace
+    df['input'] = df['input'].str.strip()
+    df['output'] = df['output'].str.strip()
+    
+    # Remove special characters but keep basic punctuation
+    df['input'] = df['input'].apply(lambda x: re.sub(r'[^a-z0-9\s.,!?]', '', x))
+    df['output'] = df['output'].apply(lambda x: re.sub(r'[^a-z0-9\s.,!?]', '', x))
+    
+    # Remove multiple spaces
+    df['input'] = df['input'].apply(lambda x: re.sub(r'\s+', ' ', x))
+    df['output'] = df['output'].apply(lambda x: re.sub(r'\s+', ' ', x))
+    
+    return df
 
 def load_and_prepare_dataset(dataset_name, config_path="config/datasets.yaml"):
     """Load and prepare a dataset based on configuration.
@@ -38,6 +65,10 @@ def load_and_prepare_dataset(dataset_name, config_path="config/datasets.yaml"):
     
     # Drop any rows with missing values
     df = df.dropna()
+    
+    # Apply dataset-specific preprocessing
+    if dataset_name == "bitod":
+        df = preprocess_bitod(df)
     
     # Sample fraction if specified
     if 'sample_frac' in dataset_config:

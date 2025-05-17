@@ -47,6 +47,10 @@ class ExperimentRunner:
         # Load dataset
         train_data, test_data = load_and_prepare_dataset(dataset_name)
         
+        # Reduce dataset size to 100 samples for running locally
+        train_data = train_data.head(100)
+        test_data = test_data.head(20)
+
         # Setup models based on experiment type
         if experiment['type'] == "single_step":
             # Single-step: Only response generation
