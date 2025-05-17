@@ -4,6 +4,7 @@ import os
 import yaml
 import asyncio
 from typing import Dict, Any
+import pandas as pd
 
 # Update imports to use correct package paths
 from components.data_loader import load_and_prepare_dataset, get_available_datasets
@@ -56,7 +57,7 @@ class ExperimentRunner:
             # Single-step: Only response generation
             response_config = self.model_config['response_models'][experiment['response_model']]
             response_handler = ResponseHandler(response_config, device=self.main_config['default_device'])
-            
+
             # If model needs fine-tuning, train it
             if response_config.get('fine_tuned', False):
                 response_handler.train(train_data)
@@ -70,32 +71,60 @@ class ExperimentRunner:
                     'generated_response': response,
                     'reference_response': row['output']
                 })
+            
                 
         else:  # Two-step
-            # Setup intent recognition
-            intent_config = self.model_config['intent_models'][experiment['intent_model']]
-            intent_handler = IntentHandler(intent_config, device=self.main_config['default_device'])
+            # Step 1: Intent Recognition
+            all_data = pd.concat([train_data, test_data])
+            intents = {}
             
-            # Setup response generation
+            if experiment['intent_model'] == 'ground_truth':
+                # Skip intent model setup and training for ground truth
+                print("Using ground truth intents from dataset")
+                for _, row in all_data.iterrows():
+                    intent = row.get('intent')
+                    intents[row['input']] = intent
+            else:
+                # Only setup and train intent model if not using ground truth
+                intent_config = self.model_config['intent_models'][experiment['intent_model']]
+                intent_handler = IntentHandler(intent_config, device=self.main_config['default_device'])
+                
+                # Train intent model if needed
+                if intent_config.get('fine_tuned', False):
+                    intent_handler.train(train_data)
+                
+                # Get intents using the model
+                for _, row in all_data.iterrows():
+                    intent = await intent_handler.get_intent(row['input'])
+                    intents[row['input']] = intent
+
+            # Prepare training data with intents
+            train_data_with_intents = []
+            for _, row in train_data.iterrows():
+                train_data_with_intents.append({
+                    'input': row['input'],
+                    'intent': intents[row['input']],
+                    'output': row['output']
+                })
+            
+            # Convert list of dictionaries to DataFrame
+            train_data_with_intents = pd.DataFrame(train_data_with_intents)
+
+            # Step 2: Response Generation
             response_config = self.model_config['response_models'][experiment['response_model']]
             response_handler = ResponseHandler(response_config, device=self.main_config['default_device'])
             
-            # Train models if needed
-            if intent_config.get('fine_tuned', False):
-                intent_handler.train(train_data)
+            # Train response model if needed with intent information
             if response_config.get('fine_tuned', False):
-                response_handler.train(train_data)
+                response_handler.train(train_data_with_intents)
             
             # Generate responses for test set
             results = []
             for _, row in test_data.iterrows():
-                # Get intent
-                if experiment['intent_model'] == 'ground_truth':
-                    intent = row.get('intent')
-                else:
-                    intent = await intent_handler.get_intent(row['input'])
+                # Get stored intent
+                intent = intents[row['input']]
                 
-                # Generate response
+                # Generate response using the intent
                 response = await response_handler.generate_response(row['input'], intent)
                 
                 results.append({
