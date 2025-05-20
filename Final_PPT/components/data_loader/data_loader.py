@@ -12,75 +12,79 @@ def load_config(config_path):
     with open(config_path, 'r') as f:
         return yaml.safe_load(f)
 
-def preprocess_bitod(df: pd.DataFrame) -> pd.DataFrame:
-    """Specific preprocessing for BiToD dataset.
-    
-    Args:
-        df: DataFrame containing BiToD data
-    Returns:
-        Preprocessed DataFrame
-    """
-    # Convert to lowercase
-    df['input'] = df['input'].str.lower()
-    df['output'] = df['output'].str.lower()
-    
-    # Remove extra whitespace
-    df['input'] = df['input'].str.strip()
-    df['output'] = df['output'].str.strip()
-    
-    # Remove special characters but keep basic punctuation
-    df['input'] = df['input'].apply(lambda x: re.sub(r'[^a-z0-9\s.,!?]', '', x))
-    df['output'] = df['output'].apply(lambda x: re.sub(r'[^a-z0-9\s.,!?]', '', x))
-    
-    # Remove multiple spaces
-    df['input'] = df['input'].apply(lambda x: re.sub(r'\s+', ' ', x))
-    df['output'] = df['output'].apply(lambda x: re.sub(r'\s+', ' ', x))
-    
-    return df
+def needs_intent_for_experiment(experiment_name, config_path):
+    """Return whether the experiment requires the intent field."""
+    with open(config_path, 'r') as f:
+        config = yaml.safe_load(f)
+    experiments = config.get("experiments", [])
+    for exp in experiments:
+        if exp.get("name") == experiment_name:
+            return exp.get("requirements", {}).get("needs_intent", False)
+    raise ValueError(f"Experiment '{experiment_name}' not found in config.")
 
-def load_and_prepare_dataset(dataset_name, config_path="config/datasets.yaml"):
-    """Load and prepare a dataset based on configuration.
-    
+def load_and_prepare_dataset(dataset_name, experiment_name,
+                             dataset_config_path="config/datasets.yaml",
+                             experiment_config_path="config/experiments.yaml"):
+    """
+    Load and prepare a dataset based on configuration and experiment intent needs.
+
     Args:
         dataset_name: Name of the dataset (e.g., "bitext", "bitod")
-        config_path: Path to the datasets configuration file
+        experiment_name: Name of the experiment (e.g., "two_step_complete_ft")
+        dataset_config_path: Path to the dataset config YAML
+        experiment_config_path: Path to the experiment config YAML
     """
-    # Load dataset configuration
-    config = load_config(config_path)
+    # Determine if intent is required by the experiment
+    needs_intent = needs_intent_for_experiment(experiment_name, experiment_config_path)
+
+    # Load dataset config
+    config = load_config(dataset_config_path)
+    if dataset_name not in config['datasets']:
+        raise ValueError(f"Dataset '{dataset_name}' not found in config.")
+
     dataset_config = config['datasets'][dataset_name]
-    
-    # Load dataset using HuggingFace datasets
     data = load_dataset(dataset_config['name'], split=dataset_config['split'])
-    
-    # Convert to DataFrame and map fields according to config
     fields = dataset_config['fields']
-    df = pd.DataFrame({
+
+    # Required fields
+    columns = {
         'input': data[fields['input']],
         'output': data[fields['output']]
-    })
-    
-    # Add intent if available
-    if 'intent' in fields:
-        df['intent'] = data[fields['intent']]
-    
-    # Drop any rows with missing values
+    }
+
+    # Optional intent field
+    if needs_intent:
+        if 'intent' not in fields or fields['intent'] not in data.column_names:
+            raise ValueError(f"'intent' required by experiment but not found in dataset '{dataset_name}'")
+        columns['intent'] = data[fields['intent']]
+
+    df = pd.DataFrame(columns)
+
+    # Drop missing values
     df = df.dropna()
-    
-    # Apply dataset-specific preprocessing
-    if dataset_name == "bitod":
-        df = preprocess_bitod(df)
-    
-    # Sample fraction if specified
+
+    # Preprocess
+    df = preprocess_dataset(df, dataset_name)
+
+    # Optional sampling
     if 'sample_frac' in dataset_config:
         df = df.sample(frac=dataset_config['sample_frac'], random_state=42)
-    
-    # Split into train/test
+
+    # Train/test split
     test_size = dataset_config.get('test_size', 0.2)
     train_df, test_df = train_test_split(df, test_size=test_size, random_state=42)
-    
+
     return train_df.reset_index(drop=True), test_df.reset_index(drop=True)
+
+def preprocess_dataset(df, dataset_name):
+    """Apply dataset-specific preprocessing logic if needed."""
+    if dataset_name == "bitod":
+        df['input'] = df['input'].apply(lambda x: re.sub(r'\s+', ' ', x.strip()))
+    elif dataset_name == "bitext":
+        df['input'] = df['input'].apply(lambda x: x.strip())
+    return df
 
 def get_available_datasets(config_path="config/datasets.yaml"):
     """Get list of available datasets from config."""
     config = load_config(config_path)
-    return list(config['datasets'].keys()) 
+    return list(config['datasets'].keys())
