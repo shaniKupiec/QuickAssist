@@ -7,7 +7,7 @@ from typing import Dict, Any
 import pandas as pd
 
 # Update imports to use correct package paths
-from components.data_loader import load_and_prepare_dataset, get_available_datasets
+from components.data_loader import load_and_prepare_dataset
 from components.intent_recognition import IntentHandler
 from components.response_generation import ResponseHandler
 
@@ -36,6 +36,10 @@ class ExperimentRunner:
         # Load experiment configurations
         with open(os.path.join(self.config_dir, "experiments.yaml"), "r") as f:
             self.experiment_config = yaml.safe_load(f)
+            
+        # Load dataset configurations
+        with open(os.path.join(self.config_dir, "datasets.yaml"), "r") as f:
+            self.dataset_config = yaml.safe_load(f)
 
     async def run_experiment(self, experiment_name: str, dataset_name: str):
         """Run a single experiment with specified dataset."""
@@ -46,7 +50,12 @@ class ExperimentRunner:
                         if exp['name'] == experiment_name)
         
         # Load dataset
-        train_data, test_data = load_and_prepare_dataset(dataset_name)
+        needs_intent = experiment['requirements']['needs_intent']
+        train_data, test_data = load_and_prepare_dataset(
+            dataset_name=dataset_name,
+            needs_intent=needs_intent,
+            dataset_config=self.dataset_config
+        )
         
         # Reduce dataset size to 100 samples for running locally
         train_data = train_data.head(100)

@@ -9,11 +9,11 @@ datasets:
     sample_frac: 0.2 # Use 20% of data for faster experimentation
     test_size: 0.2 # 20% for testing
 
-  bitod:
-    name: "bitod/customer_service"
+  customer_service:
+    name: "pranav301102/customer-service-for-llm"
     split: "train"
     fields:
-      input: "query"
+      input: "instruction"
       output: "response"
       intent: "intent"
     sample_frac: 0.2

@@ -7,42 +7,29 @@ from datasets import load_dataset
 from sklearn.model_selection import train_test_split
 import re
 
-def load_config(config_path):
-    """Load configuration from YAML file."""
-    with open(config_path, 'r') as f:
-        return yaml.safe_load(f)
 
-def needs_intent_for_experiment(experiment_name, config_path):
-    """Return whether the experiment requires the intent field."""
-    with open(config_path, 'r') as f:
-        config = yaml.safe_load(f)
-    experiments = config.get("experiments", [])
-    for exp in experiments:
-        if exp.get("name") == experiment_name:
-            return exp.get("requirements", {}).get("needs_intent", False)
-    raise ValueError(f"Experiment '{experiment_name}' not found in config.")
-
-def load_and_prepare_dataset(dataset_name, experiment_name,
-                             dataset_config_path="config/datasets.yaml",
-                             experiment_config_path="config/experiments.yaml"):
+def load_and_prepare_dataset(dataset_name, needs_intent, dataset_config):
     """
     Load and prepare a dataset based on configuration and experiment intent needs.
 
     Args:
-        dataset_name: Name of the dataset (e.g., "bitext", "bitod")
-        experiment_name: Name of the experiment (e.g., "two_step_complete_ft")
-        dataset_config_path: Path to the dataset config YAML
-        experiment_config_path: Path to the experiment config YAML
-    """
-    # Determine if intent is required by the experiment
-    needs_intent = needs_intent_for_experiment(experiment_name, experiment_config_path)
+        dataset_name (str): Name of the dataset (e.g., "bitext", "bitod")
+        needs_intent (bool): Whether the experiment requires intent information in the dataset
+        dataset_config (dict): Configuration dictionary containing dataset settings
 
-    # Load dataset config
-    config = load_config(dataset_config_path)
-    if dataset_name not in config['datasets']:
+    Returns:
+        tuple: A tuple containing:
+            - train_df (pandas.DataFrame): Training dataset with columns ['input', 'output'] and optionally ['intent']
+            - test_df (pandas.DataFrame): Test dataset with columns ['input', 'output'] and optionally ['intent']
+
+    Raises:
+        ValueError: If dataset name is not found in config or if intent is required but not available
+    """
+
+    if dataset_name not in dataset_config['datasets']:
         raise ValueError(f"Dataset '{dataset_name}' not found in config.")
 
-    dataset_config = config['datasets'][dataset_name]
+    dataset_config = dataset_config['datasets'][dataset_name]
     data = load_dataset(dataset_config['name'], split=dataset_config['split'])
     fields = dataset_config['fields']
 
@@ -54,8 +41,6 @@ def load_and_prepare_dataset(dataset_name, experiment_name,
 
     # Optional intent field
     if needs_intent:
-        if 'intent' not in fields or fields['intent'] not in data.column_names:
-            raise ValueError(f"'intent' required by experiment but not found in dataset '{dataset_name}'")
         columns['intent'] = data[fields['intent']]
 
     df = pd.DataFrame(columns)
@@ -84,7 +69,3 @@ def preprocess_dataset(df, dataset_name):
         df['input'] = df['input'].apply(lambda x: x.strip())
     return df
 
-def get_available_datasets(config_path="config/datasets.yaml"):
-    """Get list of available datasets from config."""
-    config = load_config(config_path)
-    return list(config['datasets'].keys())

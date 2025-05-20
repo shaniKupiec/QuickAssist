@@ -1,6 +1,6 @@
 # Global experiment settings
 settings:
-  available_datasets: ["bitext", "bitod"]  # List of datasets that can be used with any experiment
+  available_datasets: ["bitext", "customer_service"]  # List of datasets that can be used with any experiment
 
 experiments:
   # Two-step baseline (Ground Truth Intent + Pretrained GPT-4)
@@ -47,10 +47,10 @@ experiments:
   #     needs_intent: true
 
   # Two-step complete Fine-tuned (Fine-tuned BERT + Fine-tuned T5)
-  - name: "two_step_complete_ft"
-    type: "two_step"
-    intent_model: "bert-base"
-    response_model: "t5-base"
-    description: "BERT Base for Intent + T5 Base for Response"
-    requirements:
-      needs_intent: true 
+  # - name: "two_step_complete_ft"
+  #   type: "two_step"
+  #   intent_model: "bert-base"
+  #   response_model: "t5-base"
+  #   description: "BERT Base for Intent + T5 Base for Response"
+  #   requirements:
+  #     needs_intent: true
