@@ -23,15 +23,24 @@ async def main():
     # Initialize experiment runner
     runner = ExperimentRunner()
     
-    # Run all experiments
-    results = await runner.run_all_experiments()
+    # Run single experiment with single dataset
+    experiment_name = "two_step_baseline"  # You can change this to any experiment name from experiments.yaml
+    dataset_name = "bitext"  # You can change this to any dataset name from experiments.yaml
+    result = await runner.run_experiment(experiment_name, dataset_name)
     
-    # TODO: Save results to file or display them
+    # Print results
     print("\nExperiment Results:")
-    for result in results:
-        print(f"\nExperiment: {result['experiment']}")
-        print(f"Dataset: {result['dataset']}")
-        print(f"Metrics: {result['metrics']}")
+    print(f"\nExperiment: {result['experiment']}")
+    print(f"Dataset: {result['dataset']}")
+    print(f"Metrics: {result['metrics']}")
+    
+    # Old code for running all experiments (commented out)
+    # results = await runner.run_all_experiments()
+    # print("\nExperiment Results:")
+    # for result in results:
+    #     print(f"\nExperiment: {result['experiment']}")
+    #     print(f"Dataset: {result['dataset']}")
+    #     print(f"Metrics: {result['metrics']}")
 
 if __name__ == "__main__":
     asyncio.run(main())

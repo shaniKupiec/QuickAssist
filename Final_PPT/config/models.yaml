@@ -1,19 +1,18 @@
 intent_models:
-  bert-base:
+  t5-base:
+    type: "t5"
+    name: "google/flan-t5-small"
+    fine_tuned: false
+    output_dir: "models/response/t5-base"
+
+  bert-finetuned:
     type: "bert"
     name: "bert-base-uncased"
-    fine_tuned: false
-    output_dir: "models/intent/bert-base"
-
-  # bert-finetuned:
-  #   type: "bert"
-  #   name: "bert-base-uncased"
-  #   fine_tuned: true
-  #   output_dir: "models/intent/bert-finetuned"
+    fine_tuned: true
+    output_dir: "models/intent/bert-finetuned"
 
 response_models:
-  # no one used this model
-  t5-base: 
+  t5-base:
     type: "t5"
     name: "google/flan-t5-small"
     fine_tuned: false
@@ -24,8 +23,3 @@ response_models:
     name: "google/flan-t5-small"
     fine_tuned: true
     output_dir: "models/response/t5-finetuned"
-
-  #gpt-4:
-  #  type: "gpt-4"
-  #  api: true
-  #  model_name: "llama-3.3-70b-versatile"  # Groq model 

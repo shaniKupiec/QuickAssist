@@ -1,56 +1,49 @@
-# Global experiment settings
 settings:
-  available_datasets: ["bitext", "customer_service"]  # List of datasets that can be used with any experiment
+  available_datasets: ["bitext", "customer_service"]
 
 experiments:
-  # Two-step baseline (Ground Truth Intent + Pretrained GPT-4)
-  # - name: "two_step_baseline"
-  #   type: "two_step"
-  #   intent_model: "ground_truth"
-  #   response_model: "gpt-4"
-  #   description: "Ground Truth Intent + Pretrained GPT-4"
-  #   requirements:
-  #     needs_intent: true
+  - name: "two_step_baseline"
+    type: "two_step"
+    intent_model: "ground_truth"
+    response_model: "t5-base"
+    description: "Two-step model using ground-truth intents and a pretrained T5-base model for response generation."
+    requirements:
+      needs_intent: true
 
-  # Single-step pretrained (Direct GPT-4)
-  # - name: "single_step_pretrained"
-  #   type: "single_step"
-  #   response_model: "gpt-4"
-  #   description: "Direct Response Generation with Pretrained GPT-4"
-  #   requirements:
-  #     needs_intent: false
-
-  # Single-step Fine-tuned (Fine-tuned T5)
-  - name: "single_step_ft"
+  - name: "single_step_pretrained"
     type: "single_step"
     response_model: "t5-base"
-    description: "Direct Response Generation with T5 Base"
+    description: "Single-step response generation using a pretrained T5-base model."
     requirements:
       needs_intent: false
 
-  # Two-step pretrained (GPT-4 Intent + GPT-4 Response)
-  # - name: "two_step_pretrained"
-  #   type: "two_step"
-  #   intent_model: "gpt-4"
-  #   response_model: "gpt-4"
-  #   description: "Pretrained GPT-4 for both Intent and Response"
-  #   requirements:
-  #     needs_intent: true
+  - name: "single_step_ft"
+    type: "single_step"
+    response_model: "t5-finetuned"
+    description: "Single-step response generation using a fine-tuned T5 model."
+    requirements:
+      needs_intent: false
 
-  # Two-step partial Fine-tuned (Fine-tuned BERT + GPT-4)
-  # - name: "two_step_partial_ft"
-  #   type: "two_step"
-  #   intent_model: "bert-finetuned"
-  #   response_model: "gpt-4"
-  #   description: "Fine-tuned BERT for Intent + Pretrained GPT-4 for Response"
-  #   requirements:
-  #     needs_intent: true
+  - name: "two_step_pretrained"
+    type: "two_step"
+    intent_model: "t5-base"
+    response_model: "t5-base"
+    description: "Two-step model using pretrained T5-base for both intent detection and response generation."
+    requirements:
+      needs_intent: true
 
-  # Two-step complete Fine-tuned (Fine-tuned BERT + Fine-tuned T5)
-  # - name: "two_step_complete_ft"
-  #   type: "two_step"
-  #   intent_model: "bert-base"
-  #   response_model: "t5-base"
-  #   description: "BERT Base for Intent + T5 Base for Response"
-  #   requirements:
-  #     needs_intent: true
+  - name: "two_step_partial_ft"
+    type: "two_step"
+    intent_model: "bert-finetuned"
+    response_model: "t5-base"
+    description: "Two-step model with fine-tuned BERT for intent detection and pretrained T5-base for response generation."
+    requirements:
+      needs_intent: true
+
+  - name: "two_step_complete_ft"
+    type: "two_step"
+    intent_model: "bert-finetuned"
+    response_model: "t5-finetuned"
+    description: "Two-step model with fine-tuned BERT for intent detection and fine-tuned T5 for response generation."
+    requirements:
+      needs_intent: true

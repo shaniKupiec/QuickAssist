@@ -93,7 +93,7 @@ class ExperimentRunner:
                 for _, row in all_data.iterrows():
                     intent = row.get('intent')
                     intents[row['input']] = intent
-            else:
+            else: #NADAV
                 # Only setup and train intent model if not using ground truth
                 intent_config = self.model_config['intent_models'][experiment['intent_model']]
                 intent_handler = IntentHandler(intent_config, device=self.main_config['default_device'])
@@ -165,9 +165,4 @@ class ExperimentRunner:
                 except Exception as e:
                     print(f"Error running {experiment['name']} with {dataset}: {str(e)}")
         
-        return results
-
-def main():
-    """Main function to run all experiments."""
-    runner = ExperimentRunner()
-    asyncio.run(runner.run_all_experiments()) 
+        return results 
