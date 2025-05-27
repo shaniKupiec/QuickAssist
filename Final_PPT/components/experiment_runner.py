@@ -11,11 +11,7 @@ from components.data_loader import load_and_prepare_dataset
 from components.intent_recognition import IntentHandler
 from components.response_generation import ResponseHandler
 
-# TODO: Create evaluation module
-class Evaluator:
-    def evaluate(self, results):
-        # Placeholder for evaluation logic
-        return {}
+from components.evaluation import Evaluator 
 
 class ExperimentRunner:
     def __init__(self, config_dir="config"):
@@ -144,9 +140,14 @@ class ExperimentRunner:
                 })
         
         # Evaluate results
-        evaluator = Evaluator()
-        metrics = evaluator.evaluate(results)
-        
+        evaluator = Evaluator(
+            use_human_eval=True,
+            api_key=os.getenv("GROQ_API_KEY"),
+            model_name=self.main_config["human_eval_model"]
+        )
+
+        metrics = await evaluator.evaluate(results)
+                
         return {
             'experiment': experiment_name,
             'dataset': dataset_name,

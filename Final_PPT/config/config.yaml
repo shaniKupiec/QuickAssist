@@ -1,4 +1,4 @@
-default_device: "cpu"  # or "cuda"
+default_device: "cpu" # or "cuda"
 save_results: true
 results_dir: "results/"
 random_seed: 42
@@ -13,4 +13,4 @@ weight_decay: 0.01
 
 # Evaluation parameters
 max_eval_samples: 100 #500
-max_new_tokens: 128 
+max_new_tokens: 128

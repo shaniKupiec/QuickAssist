@@ -5,7 +5,7 @@ from .metrics import calculate_bert_score, calculate_rouge, calculate_bleu
 from .human_eval import HumanEvaluator
 
 class Evaluator:
-    def __init__(self, use_human_eval: bool = True):
+    def __init__(self, use_human_eval: bool = True, api_key: str = "", model_name: str = ""):
         """Initialize evaluator with optional human evaluation.
         
         Args:
@@ -13,7 +13,7 @@ class Evaluator:
         """
         self.use_human_eval = use_human_eval
         if use_human_eval:
-            self.human_evaluator = HumanEvaluator()
+            self.human_evaluator = HumanEvaluator(api_key, model_name)
 
     async def evaluate(self, results: List[Dict[str, str]]) -> Dict[str, float]:
         """Evaluate generated responses using multiple metrics.
