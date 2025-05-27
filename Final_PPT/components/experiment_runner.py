@@ -89,7 +89,7 @@ class ExperimentRunner:
                 for _, row in all_data.iterrows():
                     intent = row.get('intent')
                     intents[row['input']] = intent
-            else: #NADAV
+            else: 
                 # Only setup and train intent model if not using ground truth
                 intent_config = self.model_config['intent_models'][experiment['intent_model']]
                 intent_handler = IntentHandler(intent_config, device=self.main_config['default_device'])
