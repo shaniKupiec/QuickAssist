@@ -1,17 +1,12 @@
 """Automatic evaluation metrics for text generation."""
 
-from typing import List, Dict, Any
+from typing import List, Dict
 from bert_score import score
 from rouge_score import rouge_scorer
-from nltk.translate.bleu_score import corpus_bleu, SmoothingFunction
-import nltk
 import numpy as np
+from collections import Counter
+import math
 
-# Download required NLTK data
-try:
-    nltk.download('punkt', quiet=True)
-except:
-    pass
 
 def calculate_bert_score(generated: List[str], references: List[str]) -> Dict[str, float]:
     """Calculate BERTScore for generated responses.
@@ -59,26 +54,66 @@ def calculate_rouge(generated: List[str], references: List[str]) -> Dict[str, fl
         'rougeL_f': np.mean(scores['rougeL_f'])
     }
 
+def tokenize(text: str) -> List[str]:
+    return text.lower().split()
+
+def ngramify(tokens: List[str], n: int) -> List[tuple]:
+    return [tuple(tokens[i:i+n]) for i in range(len(tokens)-n+1)]
+
 def calculate_bleu(generated: List[str], references: List[str]) -> Dict[str, float]:
-    """Calculate BLEU score for generated responses.
-    
-    Args:
-        generated: List of generated responses
-        references: List of reference responses
-    
-    Returns:
-        Dictionary containing BLEU score
     """
-    # Tokenize the texts
-    tokenized_gen = [nltk.word_tokenize(gen.lower()) for gen in generated]
-    tokenized_ref = [[nltk.word_tokenize(ref.lower())] for ref in references]
-    
-    # Calculate BLEU score with smoothing
-    smoothing = SmoothingFunction().method1
-    bleu_score = corpus_bleu(
-        tokenized_ref,
-        tokenized_gen,
-        smoothing_function=smoothing
-    )
-    
-    return {'bleu': bleu_score} 
+    Calculate BLEU score for generated responses using math and Counter.
+
+    Args:
+        generated: List of generated responses.
+        references: List of reference responses (same length as generated).
+
+    Returns:
+        Dictionary containing BLEU score.
+    """
+    max_n = 4
+    weights = [1.0 / max_n] * max_n
+    clipped_counts = [0] * max_n
+    total_counts = [0] * max_n
+    cand_len_total = 0
+    ref_len_total = 0
+
+    for cand_str, ref_str in zip(generated, references):
+        cand = tokenize(cand_str)
+        ref = tokenize(ref_str)
+        cand_len_total += len(cand)
+        ref_len_total += len(ref)
+
+        for n in range(1, max_n + 1):
+            cand_ngrams = Counter(ngramify(cand, n))
+            ref_ngrams = Counter(ngramify(ref, n))
+
+            max_ref = ref_ngrams
+            for ng in cand_ngrams:
+                clipped = min(cand_ngrams[ng], max_ref.get(ng, 0))
+                clipped_counts[n-1] += clipped
+                total_counts[n-1] += cand_ngrams[ng]
+
+    precisions = []
+    for i in range(max_n):
+        if total_counts[i] == 0:
+            precisions.append(1e-9)  # smoothing
+        else:
+            precision = clipped_counts[i] / total_counts[i]
+            if precision == 0:
+                precision = 1e-9  # smoothing
+            precisions.append(precision)
+
+    log_precisions = [math.log(p) for p in precisions]
+    geometric_mean = math.exp(sum(w * lp for w, lp in zip(weights, log_precisions)))
+
+    # Brevity penalty
+    if cand_len_total == 0:
+        bp = 0.0
+    elif cand_len_total > ref_len_total:
+        bp = 1.0
+    else:
+        bp = math.exp(1 - ref_len_total / cand_len_total)
+
+    bleu_score = bp * geometric_mean
+    return {'bleu': bleu_score}
