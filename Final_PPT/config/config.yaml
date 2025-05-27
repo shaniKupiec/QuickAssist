@@ -14,3 +14,4 @@ weight_decay: 0.01
 # Evaluation parameters
 max_eval_samples: 100 #500
 max_new_tokens: 128
+human_eval_model: "deepseek-r1-distill-llama-70b"
