@@ -36,7 +36,7 @@ class Evaluator:
         # BERTScore
         bert_scores = calculate_bert_score(generated, references)
         metrics.update(bert_scores)
-        
+
         # ROUGE scores
         rouge_scores = calculate_rouge(generated, references)
         metrics.update(rouge_scores)
@@ -48,7 +48,8 @@ class Evaluator:
         # Human evaluation if enabled
         if self.use_human_eval:
             human_scores = await self.human_evaluator.evaluate_batch(queries, generated)
-            metrics.update(human_scores)
+            human_metrics = self.human_evaluator.avgMetricsHumanScore(human_scores)
+            metrics.update(human_metrics)
         
         return metrics
 

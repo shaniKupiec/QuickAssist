@@ -5,71 +5,94 @@ from pydantic_ai import Agent
 from pydantic_ai.models.groq import GroqModel
 from pydantic_ai.providers.groq import GroqProvider
 
+
 class ChatEvaluation(BaseModel):
     Helpfulness: int
     Fluency: int
     Appropriateness: int
 
+
 class HumanEvaluator:
-    def __init__(self, api_key: str, model_name: str):
-        """
-        Initialize the evaluator with a single Groq API key and a single model name.
-        """
+    def __init__(self, api_key: str, model_name: str, max_samples: int = 100):
         if not api_key or not model_name:
             raise ValueError("Both api_key and model_name must be provided")
         self.api_key = api_key
         self.model_name = model_name
-        self.setup_agent()
+        self.max_samples = max_samples
+        self.evaluation_stopped = False
+        self._setup_agent()
 
-    def setup_agent(self):
+    def _setup_agent(self):
         self.agent = Agent[None, ChatEvaluation](
-            model=GroqModel(
-                self.model_name,
-                provider=GroqProvider(api_key=self.api_key)
-            ),
+            model=GroqModel(self.model_name, provider=GroqProvider(api_key=self.api_key)),
             system_prompt=(
                 "You are evaluating a chatbot's reply to a customer.\n\n"
                 "Please rate the response on the following from 1 (poor) to 5 (excellent).\n"
                 "Return only a valid JSON object, with fields:\n"
-                "- Helpfulness: How well the response addresses the user's needs\n"
-                "- Fluency: How natural and well-written the response is\n"
-                "- Appropriateness: How suitable the tone and content are for customer service"
+                "- Helpfulness\n- Fluency\n- Appropriateness"
             ),
             result_type=ChatEvaluation,
         )
 
-    async def evaluate_single(self, query: str, response: str, max_retries: int = 3) -> Dict[str, int]:
-        prompt = f"Customer Query:\n{query}\n\nChatbot Response:\n{response}"
+    def _create_prompt(self, query: str, response: str) -> str:
+        return f"Customer Query:\n{query}\n\nChatbot Response:\n{response}"
+
+    async def _evaluate_single(self, index: int, query: str, response: str, max_retries: int = 6, base_delay: int = 2) -> Dict[str, int] | None:
+        prompt = self._create_prompt(query, response)
+
         for attempt in range(max_retries):
             try:
+                print(f"Evaluating {index + 1}/{self.max_samples}... (Attempt {attempt + 1})")
                 result = await self.agent.run(prompt)
                 return {
-                    'Helpfulness': result.output.Helpfulness,
-                    'Fluency': result.output.Fluency,
-                    'Appropriateness': result.output.Appropriateness
+                    "Helpfulness": result.output.Helpfulness,
+                    "Fluency": result.output.Fluency,
+                    "Appropriateness": result.output.Appropriateness,
+                    "average_score": (
+                        result.output.Helpfulness +
+                        result.output.Fluency +
+                        result.output.Appropriateness
+                    ) / 3
                 }
             except Exception as e:
-                print(f"Attempt {attempt + 1} failed: {str(e)}")
-                await asyncio.sleep(2 ** attempt)
-        # If all attempts fail, return zeros
-        return {'Helpfulness': 0, 'Fluency': 0, 'Appropriateness': 0}
+                delay = base_delay * (2 ** attempt)
+                print(f"⚠️ Error evaluating sample {index + 1}: {str(e)} — retrying in {delay}s...")
+                await asyncio.sleep(delay)
 
-    async def evaluate_batch(self, queries: List[str], responses: List[str], batch_size: int = 5) -> Dict[str, float]:
-        assert len(queries) == len(responses), "Query and response lists must have same length"
-        all_scores = []
-        for i in range(0, len(queries), batch_size):
-            batch_queries = queries[i:i + batch_size]
-            batch_responses = responses[i:i + batch_size]
-            tasks = [self.evaluate_single(q, r) for q, r in zip(batch_queries, batch_responses)]
-            batch_scores = await asyncio.gather(*tasks)
-            all_scores.extend(batch_scores)
-            await asyncio.sleep(1)
-        if not all_scores:
-            return {k: 0 for k in ['human_helpfulness', 'human_fluency', 'human_appropriateness', 'human_overall']}
-        avg_scores = {
-            'human_helpfulness': sum(s['Helpfulness'] for s in all_scores) / len(all_scores),
-            'human_fluency': sum(s['Fluency'] for s in all_scores) / len(all_scores),
-            'human_appropriateness': sum(s['Appropriateness'] for s in all_scores) / len(all_scores)
+        print(f"🚫 Skipping sample {index + 1} after {max_retries} failed attempts.")
+        return None
+
+    async def evaluate_batch(self, queries: List[str], generated_responses: List[str]) -> List[Dict[str, int] | None]:
+        results = []
+        for i, (query, response) in enumerate(zip(queries, generated_responses)):
+            if i >= self.max_samples:
+                break
+            if self.evaluation_stopped:
+                print("🛑 Evaluation stopped early due to error.")
+                break
+
+            result = await self._evaluate_single(i, query, response)
+            results.append(result)
+            await asyncio.sleep(1.5)  # Rate limit buffer
+
+        return results
+    
+    def avgMetricsHumanScore(self, evaluation_results: List[Dict[str, int] | None]) -> Dict[str, float]:
+        """Computes average human evaluation metrics from evaluate_batch() results."""
+        valid_scores = [s for s in evaluation_results if s is not None]
+
+        if not valid_scores:
+            print("⚠️ No valid human evaluation results.")
+            return {}
+
+        avg_helpfulness = sum(d['Helpfulness'] for d in valid_scores) / len(valid_scores)
+        avg_fluency = sum(d['Fluency'] for d in valid_scores) / len(valid_scores)
+        avg_appropriateness = sum(d['Appropriateness'] for d in valid_scores) / len(valid_scores)
+        avg_total = sum(d['average_score'] for d in valid_scores) / len(valid_scores)
+
+        return {
+            "Human_Helpfulness": avg_helpfulness,
+            "Human_Fluency": avg_fluency,
+            "Human_Appropriateness": avg_appropriateness,
+            "Human_Average": avg_total,
         }
-        avg_scores['human_overall'] = sum(avg_scores.values()) / 3
-        return avg_scores
