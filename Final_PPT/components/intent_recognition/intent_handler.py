@@ -17,9 +17,10 @@ from pydantic_ai.providers.groq import GroqProvider
 
 
 class IntentHandler:
-    def __init__(self, model_config, device="cuda" if torch.cuda.is_available() else "cpu"):
+    def __init__(self, model_config, main_config):
         self.model_config = model_config
-        self.device = device
+        self.main_config = main_config
+        self.device = main_config['default_device']
         self.model_type = model_config.get('type')
         self.setup_model()
 
@@ -130,8 +131,8 @@ class IntentHandler:
 
         training_args = TrainingArguments(
             output_dir=self.model_config["output_dir"],
-            per_device_train_batch_size=8,
-            num_train_epochs=3,
+            per_device_train_batch_size=self.main_config.batch_size,
+            num_train_epochs=self.main_config.epochs,
             logging_dir="./logs",
             logging_steps=10
         )

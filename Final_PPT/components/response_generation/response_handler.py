@@ -13,10 +13,11 @@ from datasets import Dataset
 import os
 
 class ResponseHandler:
-    def __init__(self, model_config, device="cuda"):
+    def __init__(self, model_config, main_config):
         """Initialize response handler based on model configuration."""
         self.model_config = model_config
-        self.device = device
+        self.main_config = main_config
+        self.device = main_config['default_device']
         self.model_type = model_config.get('type')
         self.setup_model()
 
@@ -53,8 +54,8 @@ class ResponseHandler:
         else:
             formatted_input = [f"User Query: {q}" for q in examples["input"]]
             
-        inputs = self.tokenizer(formatted_input, padding="max_length", truncation=True, max_length=128)
-        labels = self.tokenizer(examples["output"], padding="max_length", truncation=True, max_length=128)
+        inputs = self.tokenizer(formatted_input, padding="max_length", truncation=True, max_length=self.main_config.max_length)
+        labels = self.tokenizer(examples["output"], padding="max_length", truncation=True, max_length=self.main_config.max_length)
         inputs["labels"] = labels["input_ids"]
         return inputs
 
@@ -101,10 +102,10 @@ class ResponseHandler:
             # Training configuration
             training_args = Seq2SeqTrainingArguments(
                 output_dir="./results",  # Simple output directory like in baseline.py
-                per_device_train_batch_size=16,
-                num_train_epochs=5,
-                learning_rate=5e-5,
-                weight_decay=0.01,
+                per_device_train_batch_size=self.main_config.batch_size,
+                num_train_epochs=self.main_config.epochs,
+                learning_rate=self.main_config.learning_rate,
+                weight_decay=self.main_config.weight_decay,
                 logging_steps=50,
                 save_strategy="epoch",
                 report_to="none"

@@ -3,6 +3,7 @@
 import os
 import yaml
 import asyncio
+import torch
 from typing import Dict, Any
 import pandas as pd
 
@@ -24,6 +25,7 @@ class ExperimentRunner:
         # Load main configuration
         with open(os.path.join(self.config_dir, "config.yaml"), "r") as f:
             self.main_config = yaml.safe_load(f)
+            self.main_config['default_device'] = "cuda" if torch.cuda.is_available() else "cpu"
             
         # Load model configurations
         with open(os.path.join(self.config_dir, "models.yaml"), "r") as f:
@@ -52,16 +54,12 @@ class ExperimentRunner:
             needs_intent=needs_intent,
             dataset_config=self.dataset_config
         )
-        
-        # Reduce dataset size to 100 samples for running locally
-        train_data = train_data.head(100)
-        test_data = test_data.head(20)
 
         # Setup models based on experiment type
         if experiment['type'] == "single_step":
             # Single-step: Only response generation
             response_config = self.model_config['response_models'][experiment['response_model']]
-            response_handler = ResponseHandler(response_config, device=self.main_config['default_device'])
+            response_handler = ResponseHandler(response_config, main_config=self.main_config)
 
             # If model needs fine-tuning, train it
             if response_config.get('fine_tuned', False):
@@ -92,7 +90,7 @@ class ExperimentRunner:
             else: 
                 # Only setup and train intent model if not using ground truth
                 intent_config = self.model_config['intent_models'][experiment['intent_model']]
-                intent_handler = IntentHandler(intent_config, device=self.main_config['default_device'])
+                intent_handler = IntentHandler(intent_config, main_config=self.main_config)
                 
                 # Train intent model if needed
                 if intent_config.get('fine_tuned', False):
@@ -117,7 +115,7 @@ class ExperimentRunner:
 
             # Step 2: Response Generation
             response_config = self.model_config['response_models'][experiment['response_model']]
-            response_handler = ResponseHandler(response_config, device=self.main_config['default_device'])
+            response_handler = ResponseHandler(response_config, main_config=self.main_config)
             
             # Train response model if needed with intent information
             if response_config.get('fine_tuned', False):
@@ -143,7 +141,8 @@ class ExperimentRunner:
         evaluator = Evaluator(
             use_human_eval=True,
             api_key=os.getenv("GROQ_API_KEY"),
-            model_name=self.main_config["human_eval_model"]
+            model_name=self.main_config["human_eval_model"],
+            main_config=self.main_config
         )
 
         metrics = await evaluator.evaluate(results)

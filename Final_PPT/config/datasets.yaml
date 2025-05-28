@@ -1,13 +1,13 @@
 datasets:
-  bitext:
+  bitext: 
     name: "bitext/Bitext-customer-support-llm-chatbot-training-dataset"
     split: "train"
     fields:
       input: "instruction"
       output: "response"
       intent: "intent"
-    sample_frac: 0.2 # Use 20% of data for faster experimentation
-    test_size: 0.2 # 20% for testing
+    sample_frac: 0.01 # original size: 26,872, new size 0.2s: 5374.4
+    test_size: 0.2
 
   customer_service:
     name: "pranav301102/customer-service-for-llm"
@@ -16,5 +16,5 @@ datasets:
       input: "instruction"
       output: "response"
       intent: "intent"
-    sample_frac: 0.2
+    sample_frac: 1 # size: 2,700
     test_size: 0.2

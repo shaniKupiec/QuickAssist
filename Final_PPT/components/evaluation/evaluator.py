@@ -7,15 +7,17 @@ import csv
 import json
 
 class Evaluator:
-    def __init__(self, use_human_eval: bool = True, api_key: str = "", model_name: str = ""):
+    def __init__(self, use_human_eval: bool, api_key: str, model_name: str, main_config):
         """Initialize evaluator with optional human evaluation.
         
         Args:
             use_human_eval: Whether to include human-like evaluation using LLMs
         """
         self.use_human_eval = use_human_eval
+        self.main_config = main_config
+
         if use_human_eval:
-            self.human_evaluator = HumanEvaluator(api_key, model_name)
+            self.human_evaluator = HumanEvaluator(api_key, model_name, max_samples=self.main_config['max_eval_samples'])
 
     async def evaluate(self, results: List[Dict[str, str]]) -> Dict[str, float]:
         """Evaluate generated responses using multiple metrics.
