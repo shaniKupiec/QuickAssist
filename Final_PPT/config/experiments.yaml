@@ -47,3 +47,11 @@ experiments:
     description: "Two-step model with fine-tuned BERT for intent detection and fine-tuned T5 for response generation."
     requirements:
       needs_intent: true
+
+  - name: "two_step_partial_ft_TMP"
+    type: "two_step"
+    intent_model: "t5-base"
+    response_model: "t5-finetuned"
+    description: "TMP"
+    requirements:
+      needs_intent: true

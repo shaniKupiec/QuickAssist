@@ -54,8 +54,8 @@ class ResponseHandler:
         else:
             formatted_input = [f"User Query: {q}" for q in examples["input"]]
             
-        inputs = self.tokenizer(formatted_input, padding="max_length", truncation=True, max_length=self.main_config.max_length)
-        labels = self.tokenizer(examples["output"], padding="max_length", truncation=True, max_length=self.main_config.max_length)
+        inputs = self.tokenizer(formatted_input, padding="max_length", truncation=True, max_length=self.main_config["max_length"])
+        labels = self.tokenizer(examples["output"], padding="max_length", truncation=True, max_length=self.main_config["max_length"])
         inputs["labels"] = labels["input_ids"]
         return inputs
 
@@ -102,10 +102,10 @@ class ResponseHandler:
             # Training configuration
             training_args = Seq2SeqTrainingArguments(
                 output_dir="./results",  # Simple output directory like in baseline.py
-                per_device_train_batch_size=self.main_config.batch_size,
-                num_train_epochs=self.main_config.epochs,
-                learning_rate=self.main_config.learning_rate,
-                weight_decay=self.main_config.weight_decay,
+                per_device_train_batch_size=self.main_config["batch_size"],
+                num_train_epochs=self.main_config["epochs"],
+                learning_rate=5e-5,
+                weight_decay=self.main_config["weight_decay"],
                 logging_steps=50,
                 save_strategy="epoch",
                 report_to="none"

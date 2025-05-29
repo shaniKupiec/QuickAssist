@@ -131,8 +131,8 @@ class IntentHandler:
 
         training_args = TrainingArguments(
             output_dir=self.model_config["output_dir"],
-            per_device_train_batch_size=self.main_config.batch_size,
-            num_train_epochs=self.main_config.epochs,
+            per_device_train_batch_size=self.main_config["batch_size"],
+            num_train_epochs=self.main_config["epochs"],
             logging_dir="./logs",
             logging_steps=10
         )
