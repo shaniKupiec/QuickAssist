@@ -96,31 +96,27 @@ class IntentHandler:
         labels = label_encoder.fit_transform(train_data["intent"])
         texts = train_data["input"].tolist()
 
-        self.model.num_labels = len(label_encoder.classes_)
+        # Reinitialize model with correct number of labels
+        from transformers import AutoConfig, AutoModelForSequenceClassification
+        config = AutoConfig.from_pretrained(self.model_config["name"])
+        config.num_labels = len(label_encoder.classes_)
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_config["name"])
+        self.model = AutoModelForSequenceClassification.from_pretrained(self.model_config["name"], config=config).to(self.device)
+
         self.model.config.label2id = {label: i for i, label in enumerate(label_encoder.classes_)}
         self.model.config.id2label = {i: label for i, label in enumerate(label_encoder.classes_)}
 
         X_train, X_test, y_train, y_test = train_test_split(texts, labels, test_size=0.2, random_state=42)
 
-
         train_encodings = self.tokenizer(X_train, truncation=True, padding=True)
-        train_encodings = {k: list(v) for k, v in train_encodings.items()} # ensure lists
+        train_encodings = {k: list(v) for k, v in train_encodings.items()}
         train_encodings["labels"] = list(y_train)
         train_dataset = Dataset.from_dict(train_encodings)
 
-        # train_encodings = self.tokenizer(X_train, truncation=True, padding=True)
-        # train_encodings["labels"] = y_train.tolist()
-        # train_dataset = Dataset.from_dict(train_encodings)
-
         test_encodings = self.tokenizer(X_test, truncation=True, padding=True)
-        test_encodings = {k: list(v) for k, v in test_encodings.items()} # ensure lists
+        test_encodings = {k: list(v) for k, v in test_encodings.items()}
         test_encodings["labels"] = list(y_test)
         test_dataset = Dataset.from_dict(test_encodings)
-
-
-        # test_encodings = self.tokenizer(X_test, truncation=True, padding=True)
-        # test_encodings["labels"] = y_test.tolist()
-        # test_dataset = Dataset.from_dict(test_encodings)
 
         def compute_metrics(eval_pred):
             logits, labels = eval_pred
