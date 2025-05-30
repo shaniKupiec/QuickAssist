@@ -56,7 +56,7 @@ class Evaluator:
             human_metrics = self.human_evaluator.avgMetricsHumanScore(human_scores)
             metrics.update(human_metrics)
 
-        if self.use_human_eval and human_scores is not None:
+        if self.use_human_eval and human_scores is not None and self.main_config["save_results"]:
             self.save_human_scores_and_metrics(results, intent, human_scores, metrics)
         
         return metrics
@@ -82,9 +82,12 @@ class Evaluator:
         """
         # Prepare rows for the CSV
         rows = []
-        for i, (res, intent, score) in enumerate(zip(results, intent, human_scores)):
+        # Pad or truncate human_scores to match the length of results
+        full_human_scores = human_scores + [None] * (len(results) - len(human_scores))
+
+        # Now iterate using zip with padded scores
+        for i, (res, intent_val, score) in enumerate(zip(results, intent, full_human_scores)):
             if score is None:
-                # If no score, fill with empty or default values
                 score = {
                     "Helpfulness": "",
                     "Fluency": "",
@@ -93,7 +96,7 @@ class Evaluator:
                 }
             rows.append({
                 "query": res['query'],
-                "intent": intent,
+                "intent": intent_val,
                 "reference_response": res['reference_response'],
                 "generated_response": res['generated_response'],
                 "Helpfulness": score.get("Helpfulness", ""),
@@ -101,6 +104,7 @@ class Evaluator:
                 "Appropriateness": score.get("Appropriateness", ""),
                 "avg_score": score.get("average_score", "")
             })
+
 
         # Write human_scores CSV
         with open(human_scores_csv_path, mode='w', newline='', encoding='utf-8') as csvfile:
