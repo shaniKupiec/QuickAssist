@@ -1,0 +1,13 @@
+{
+    "bert_score_precision": 0.881356418132782,
+    "bert_score_recall": 0.857543408870697,
+    "bert_score_f1": 0.8690599203109741,
+    "rouge1_f": 0.3800219967701636,
+    "rouge2_f": 0.1402023042003037,
+    "rougeL_f": 0.24684738382754162,
+    "bleu": 0.05819215193688838,
+    "Human_Helpfulness": 2.1,
+    "Human_Fluency": 3.3,
+    "Human_Appropriateness": 2.7133333333333334,
+    "Human_Average": 2.7044444444444444
+}
