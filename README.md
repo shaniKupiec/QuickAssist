@@ -1,90 +1,67 @@
 # QuickAssist: Intent-Aware Chatbot for Customer Support
 
-## 📌 Project Overview
+## 🧠 Overview
 
-**QuickAssist** is an NLP project aimed at enhancing customer support chatbots using **intent conditioning**. We explore how including an **explicit intent label** in the input affects the **quality of generated responses** from large language models (LLMs).
-
----
-
-## 🎯 Objective
-
-To compare chatbot response generation **with** and **without** intent information:
-
-- **Variant A:** Input = Customer query  
-- **Variant B:** Input = Customer query + intent label  
-
-By analyzing both, we assess whether **intent-aware input** leads to more helpful, fluent, and contextually appropriate responses.
+*QuickAssist* is an NLP course project focused on improving chatbot responses in customer support settings using *intent conditioning. Our work investigates whether explicitly providing the chatbot with an **intent label* improves the *quality* and *appropriateness* of its replies.
 
 ---
 
-## 💡 Key Features
+## 📂 Repository Structure
 
-- Uses **pre-annotated customer support datasets** with labeled intents
-- Employs **LLMs** for response generation
-- Evaluates response quality through:
-  - **Automatic metrics** (e.g., BERTScore)
-  - **LLM-based human-like judgments** (GPT-4 scoring)
+This repository includes all three project milestones with both presentation materials and code. The directory is organized to reflect the **growth and evolution** of our approach:
 
----
+```bash
+QuickAssist/
+├── Project_Proposal_Presentation.pdf      # Initial idea and proposal
+├── Mid_PPT/
+│   ├── requirements.txt                   # Dependencies for mid-stage code
+│   ├── Mid_Project_Presentation.pdf       # Mid-project presentation
+│   └── README_Mid_PPT.md                  # Detailed mid-stage experiment overview
+├── Final_PPT/
+│   ├── requirements.txt                   # Final dependencies
+│   ├── Final_Project_Presentation.pdf     # Final presentation slides
+│   └── README_Final_PPT.md                # Full description of final model, experiments, and results
+```
 
-## 🧠 NLP Tasks Involved
+Each stage documents:
 
-- **Text Generation**
-- **Intent Recognition**
-- **Contextual Understanding**
-
----
-
-## 🗃️ Datasets
-
-We use two public datasets:
-
-1. [**Customer-Service-for-LLM**](https://huggingface.co/datasets/pranav301102/customer-service-for-llm/viewer/default/train)
-   - ~2,700 QA pairs
-   - 27 intent types
-   - 11 categories
-
-2. [**Bitext Customer Support Dataset**](https://huggingface.co/datasets/bitext/Bitext-customer-support-llm-chatbot-training-dataset/viewer/default/train?row=1&views%5B%5D=train)
-   - ~26,872 QA pairs
-   - 27 intent types
-   - 10 categories
-   - 30 entity/slot types
-
-Each sample includes customer queries, intents, and slot information.
+* Methodology & motivation
+* Code progression
+* Intermediate and final results
 
 ---
 
-## ⚙️ Methodology
+## 🎯 Project Summary
 
-1. **Preprocess Data:** Extract and organize query–intent–response triples  
-2. **Generate Responses:**
-   - Variant A: Feed query alone
-   - Variant B: Feed query + intent
-3. **Evaluate Outputs:**
-   - **BERTScore** for semantic similarity to reference
-   - **GPT-4-based scoring** on Helpfulness, Fluency, and Appropriateness
+Modern customer support bots often *fail to generate useful answers* due to a lack of intent understanding. This project explores whether *explicitly adding the user's intent* to the chatbot input improves response quality.
 
----
+We tested two main configurations:
 
-## 📊 Evaluation
+* *Variant A*: Only the customer query
+* *Variant B*: Customer query + intent label
 
-- **BERTScore:** Captures semantic similarity between generated and reference responses using contextual embeddings.
-- **GPT-4 Evaluation:**
-  - **Helpfulness:** Did the answer address the query?
-  - **Fluency:** Is it clear and grammatically correct?
-  - **Appropriateness:** Is the tone and content suitable?
+We evaluated response quality through *automatic metrics* (e.g., BLEU, ROUGE, BERTScore) and *human-like scoring* using GPT-4.
+
+🧪 For detailed results and technical insights, refer to the subfolders:
+
+* 🔗 [Mid-PPT README](https://github.com/shaniKupiec/QuickAssist/blob/main/Mid_PPT/README_Mid_PPT.md)
+* 🔗 [Final-PPT README](https://github.com/shaniKupiec/QuickAssist/blob/main/Final_PPT/README_Final_PPT.md)
 
 ---
 
-## 🚀 Expected Outcomes
+## 🔍 Graphical Abstract
 
-- Empirical comparison of chatbot performance **with vs. without intent labels**
-- Insights into the importance of **intent conditioning** for improving LLM response quality in customer support scenarios
+> A visual summary of our project, datasets, models, and results.
+
+![Graphical Abstract](https://github.com/user-attachments/assets/0d0d9f3c-bef1-4430-939f-4c65823a5468)
 
 ---
 
-## 📎 Authors
+## 👥 Team
 
-- [Inbal Bolshinsky](https://github.com/InbalBolshinsky), [Shani Kupiec](https://github.com/shaniKupiec), [Almog Sasson](https://github.com/Almog-Sasson) and [Nadav Margaliot](https://github.com/NadavMargaliot)
-- NLP Course, Holon Institute of Technology (HIT)
+* [Inbal Bolshinsky](https://github.com/InbalBolshinsky)
+* [Shani Kupiec](https://github.com/shaniKupiec)
+* [Almog Sasson](https://github.com/Almog-Sasson)
+* [Nadav Margaliot](https://github.com/NadavMargaliot)
 
+📍 NLP Course, Holon Institute of Technology (HIT)
