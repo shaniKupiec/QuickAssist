@@ -17,7 +17,13 @@ Note: This may take some time to complete.
 3. Choose Experiment and dataset
    change in main.py file the variables: experiment_name, dataset_name
 
-4. Run the main script:
+4. in the experiment_runner.py file
+   under the code train_data, test_data = ....
+   add this 2 lines
+   train_data = train_data.head(100)
+   test_data = test_data.head(20)
+
+5. Run the main script:
 
 ```bash
 python main.py
