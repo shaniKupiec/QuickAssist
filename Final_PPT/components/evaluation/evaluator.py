@@ -58,7 +58,10 @@ class Evaluator:
         if self.main_config["save_results"]:
             self.save_results(results, intent, human_scores, metrics, intent_accuracy)
         
-        return metrics
+        return {
+            "metrics": metrics,
+            "intent_accuracy": intent_accuracy
+        }
 
     def save_results(
         self,

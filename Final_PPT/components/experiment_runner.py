@@ -147,12 +147,13 @@ class ExperimentRunner:
             main_config=self.main_config
         )
 
-        metrics = await evaluator.evaluate(results, save_intent_to_calc_accuracy, test_data)
+        eval_result = await evaluator.evaluate(results, save_intent_to_calc_accuracy, test_data)
                 
         return {
             'experiment': experiment_name,
             'dataset': dataset_name,
-            'metrics': metrics,
+            'metrics': eval_result["metrics"],
+            'intent_accuracy': eval_result["intent_accuracy"],
             'results': results
         }
 

@@ -24,15 +24,16 @@ async def main():
     runner = ExperimentRunner()
     
     # Run single experiment with single dataset
-    experiment_name = "two_step_baseline"  # You can change this to any experiment name from experiments.yaml
+    experiment_name = "two_step_complete_ft"  # You can change this to any experiment name from experiments.yaml
     dataset_name = "bitext"  # You can change this to any dataset name from experiments.yaml
     result = await runner.run_experiment(experiment_name, dataset_name)
     
     # Print results
     print("\nExperiment Results:")
     print(f"\nExperiment: {result['experiment']}")
-    print(f"Dataset: {result['dataset']}")
-    print(f"Metrics: {result['metrics']}")
+    print(f"\nDataset: {result['dataset']}")
+    print(f"\nMetrics: {result['metrics']}")
+    print(f"\nintent_accuracy: {result['intent_accuracy']}")
     
     # Old code for running all experiments (commented out)
     # results = await runner.run_all_experiments()
