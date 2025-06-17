@@ -1,9 +1,8 @@
-import json
 from sklearn.metrics import accuracy_score
 
 # Prepare training data with intents
 # Intent accuracy calculation
-def calculate_intent_accuracy(test_data, predicted_intents, save_path="intent_metrics.json"):
+def calculate_intent_accuracy(test_data, predicted_intents):
  
     y_true = []
     y_pred = []
@@ -17,9 +16,5 @@ def calculate_intent_accuracy(test_data, predicted_intents, save_path="intent_me
 
     intent_accuracy = accuracy_score(y_true, y_pred)
     print(f"Intent Recognition Accuracy: {intent_accuracy:.4f}")
-
-    if save_path:
-        with open(save_path, "w") as f:
-            json.dump({"intent_accuracy": intent_accuracy}, f, indent=2)
 
     return intent_accuracy
