@@ -6,7 +6,7 @@ datasets:
       input: "instruction"
       output: "response"
       intent: "intent"
-    sample_frac: 0.1 # ~2,687 samples
+    sample_frac: 0.1 # 2,687 samples
     test_size: 0.2
 
   customer_service:
@@ -16,5 +16,5 @@ datasets:
       input: "instruction"
       output: "response"
       intent: "intent"
-    sample_frac: 1 # size: 2,700
+    sample_frac: 1 # 2,700 samples
     test_size: 0.2
