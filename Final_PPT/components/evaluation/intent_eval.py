@@ -1,7 +1,5 @@
 from sklearn.metrics import accuracy_score
 
-# Prepare training data with intents
-# Intent accuracy calculation
 def calculate_intent_accuracy(test_data, predicted_intents):
  
     y_true = []
@@ -15,6 +13,5 @@ def calculate_intent_accuracy(test_data, predicted_intents):
             y_pred.append(predicted_intent)
 
     intent_accuracy = accuracy_score(y_true, y_pred)
-    print(f"Intent Recognition Accuracy: {intent_accuracy:.4f}")
 
     return intent_accuracy

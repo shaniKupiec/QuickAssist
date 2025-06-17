@@ -1,5 +1,3 @@
-"""Automatic evaluation metrics for text generation."""
-
 from typing import List, Dict
 from bert_score import score
 from rouge_score import rouge_scorer
@@ -9,15 +7,6 @@ import math
 
 
 def calculate_bert_score(generated: List[str], references: List[str]) -> Dict[str, float]:
-    """Calculate BERTScore for generated responses.
-    
-    Args:
-        generated: List of generated responses
-        references: List of reference responses
-    
-    Returns:
-        Dictionary containing precision, recall, and F1 scores
-    """
     P, R, F1 = score(generated, references, lang="en", verbose=False)
     return {
         'bert_score_precision': P.mean().item(),
@@ -26,15 +15,6 @@ def calculate_bert_score(generated: List[str], references: List[str]) -> Dict[st
     }
 
 def calculate_rouge(generated: List[str], references: List[str]) -> Dict[str, float]:
-    """Calculate ROUGE scores for generated responses.
-    
-    Args:
-        generated: List of generated responses
-        references: List of reference responses
-    
-    Returns:
-        Dictionary containing ROUGE-1, ROUGE-2, and ROUGE-L scores
-    """
     scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
     scores = {
         'rouge1_f': [],
@@ -61,16 +41,6 @@ def ngramify(tokens: List[str], n: int) -> List[tuple]:
     return [tuple(tokens[i:i+n]) for i in range(len(tokens)-n+1)]
 
 def calculate_bleu(generated: List[str], references: List[str]) -> Dict[str, float]:
-    """
-    Calculate BLEU score for generated responses using math and Counter.
-
-    Args:
-        generated: List of generated responses.
-        references: List of reference responses (same length as generated).
-
-    Returns:
-        Dictionary containing BLEU score.
-    """
     max_n = 4
     weights = [1.0 / max_n] * max_n
     clipped_counts = [0] * max_n

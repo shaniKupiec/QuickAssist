@@ -1,5 +1,3 @@
-"""Main evaluator class combining automatic and human evaluation metrics."""
-
 from typing import List, Dict, Any
 from .metrics import calculate_bert_score, calculate_rouge, calculate_bleu
 from .human_eval import HumanEvaluator
@@ -9,39 +7,24 @@ import json
 
 class Evaluator:
     def __init__(self, api_key: str, model_name: str, main_config):
-        """Initialize evaluator with optional human evaluation.
-        """
         self.main_config = main_config
         self.human_evaluator = HumanEvaluator(api_key, model_name, max_samples=self.main_config['max_eval_samples'])
 
     async def evaluate(self, results: List[Dict[str, str]], save_intent_to_calc_accuracy, test_data) -> Dict[str, float]:
-        """Evaluate generated responses using multiple metrics.
-        
-        Args:
-            results: List of dictionaries containing 'query', 'generated_response',
-                    and 'reference_response' keys
-        
-        Returns:
-            Dictionary containing all evaluation metrics
-        """
         # Extract generated and reference responses
         generated = [r['generated_response'] for r in results]
         references = [r['reference_response'] for r in results]
         queries = [r['query'] for r in results]
         intent = [r.get('intent', '') for r in results]
         
-        # Calculate automatic metrics
         metrics = {}
         
-        # BERTScore
         bert_scores = calculate_bert_score(generated, references)
         metrics.update(bert_scores)
 
-        # ROUGE scores
         rouge_scores = calculate_rouge(generated, references)
         metrics.update(rouge_scores)
         
-        # BLEU score
         bleu_score = calculate_bleu(generated, references)
         metrics.update(bleu_score)
         
@@ -50,7 +33,6 @@ class Evaluator:
             accuracy_value = calculate_intent_accuracy(test_data, save_intent_to_calc_accuracy)
             intent_accuracy = {"intent_accuracy": accuracy_value}
         
-        # Human evaluation if enabled
         human_scores = await self.human_evaluator.evaluate_batch(queries, generated)
         human_metrics = self.human_evaluator.avgMetricsHumanScore(human_scores)
         metrics.update(human_metrics)
@@ -74,17 +56,6 @@ class Evaluator:
         metrics_file_path: str = "metrics.json",
         intent_accuracy_file_path: str = "intent_accuracy.json"
     ):
-        """Save human evaluation scores alongside original data to CSV and metrics dict to file.
-        
-        Args:
-            results: Original results with query, generated_response, reference_response
-            intent: List of intent (aligned with results)
-            human_scores: List of human evaluation dicts or None
-            metrics: Aggregated evaluation metrics dict
-            human_scores_csv_path: Path to save human scores CSV
-            metrics_file_path: Path to save aggregated metrics (JSON)
-        """
-        # Prepare rows for the CSV
         rows = []
         # Pad or truncate human_scores to match the length of results
         full_human_scores = human_scores + [None] * (len(results) - len(human_scores))
@@ -124,7 +95,7 @@ class Evaluator:
         with open(metrics_file_path, "w", encoding="utf-8") as f:
             json.dump(metrics, f, indent=4)
 
-        # Save metrics dict as JSON
+        # Save intent_accuracy dict as JSON
         if intent_accuracy:
             with open(intent_accuracy_file_path, "w", encoding="utf-8") as f:
                 json.dump(intent_accuracy, f, indent=4)

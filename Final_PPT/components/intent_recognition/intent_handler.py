@@ -49,16 +49,6 @@ class IntentHandler:
             self.tokenizer = AutoTokenizer.from_pretrained(self.model_config['name'])
             self.model = AutoModelForSeq2SeqLM.from_pretrained(self.model_config['name']).to(self.device)
 
-        # TODO: finish flow for gpt-4
-        elif self.model_type == "gpt-4":
-            self.model = Agent[None, str](
-                model=GroqModel(
-                    self.model_config['model_name'],
-                    provider=GroqProvider(api_key=os.getenv("GROQ_API_KEY"))
-                ),
-                system_prompt="You are an intent classifier for customer service queries. Return only the intent label."
-            )
-
     async def get_intent(self, query, ground_truth_intent=None):
         if self.model_type == "ground_truth":
             if ground_truth_intent is None:
@@ -79,14 +69,6 @@ class IntentHandler:
                 outputs = self.model.generate(**inputs, max_new_tokens=10)
             predicted_intent = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
             return predicted_intent.strip()
-
-        # TODO: finish flow for gpt-4
-        elif self.model_type == "gpt-4":
-            result = await self.model.run(query)
-            return result.output.strip()
-
-        else:
-            raise ValueError(f"Unknown model type: {self.model_type}")
 
     def train(self, train_data, eval_data=None):
         if self.model_type != "bert":

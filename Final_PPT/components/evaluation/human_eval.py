@@ -73,7 +73,7 @@ class HumanEvaluator:
 
             result = await self._evaluate_single(i, query, response)
             results.append(result)
-            await asyncio.sleep(1.5)  # Rate limit buffer
+            await asyncio.sleep(1.5)
 
         return results
     

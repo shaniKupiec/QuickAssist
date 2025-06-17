@@ -1,13 +1,8 @@
-"""Experiment runner for executing different experimental configurations."""
-
 import os
 import yaml
-import asyncio
 import torch
-from typing import Dict, Any
 import pandas as pd
 
-# Update imports to use correct package paths
 from components.data_loader import load_and_prepare_dataset
 from components.intent_recognition import IntentHandler
 from components.response_generation import ResponseHandler 
@@ -156,16 +151,3 @@ class ExperimentRunner:
             'intent_accuracy': eval_result["intent_accuracy"],
             'results': results
         }
-
-    async def run_all_experiments(self):
-        """Run all experiments with all compatible datasets."""
-        results = []
-        for experiment in self.experiment_config['experiments']:
-            for dataset in self.experiment_config['settings']['available_datasets']:
-                try:
-                    result = await self.run_experiment(experiment['name'], dataset)
-                    results.append(result)
-                except Exception as e:
-                    print(f"Error running {experiment['name']} with {dataset}: {str(e)}")
-        
-        return results 
