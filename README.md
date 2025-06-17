@@ -11,8 +11,6 @@
 
 ## 🔍 Graphical Abstract
 
-> A visual summary of our pipeline, data, models, and evaluation.
-
 ![Graphical Abstract](https://github.com/user-attachments/assets/0d0d9f3c-bef1-4430-939f-4c65823a5468)
 
 ---
