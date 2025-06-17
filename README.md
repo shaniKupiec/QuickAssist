@@ -165,7 +165,3 @@ To run our code, see the instructions in:
 * [Nadav Margaliot](https://github.com/NadavMargaliot)
 
 📍 NLP Course, Holon Institute of Technology (HIT)
-
----
-
-Would you like me to export this as a `README.md` file for GitHub upload?
