@@ -1,6 +1,5 @@
 default_device: "cuda" # "cpu" or "cuda"
 save_results: true
-results_dir: "results/"
 
 # Model parameters
 max_length: 128
